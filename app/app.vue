@@ -20,7 +20,7 @@ useSeoMeta({ title, description, ogTitle: title, ogDescription: description, twi
           <span class="brand-subtitle">CABELLO HUMANO</span>
         </NuxtLink>
         <nav class="main-nav" aria-label="Navegación principal">
-          <a href="#coleccion">Colección</a><a href="#experiencia">Nuestra esencia</a><a href="#contacto">Contacto</a>
+          <NuxtLink to="/tienda">Tienda</NuxtLink><NuxtLink to="/#texturas">Texturas</NuxtLink><a href="#contacto">Contacto</a>
         </nav>
         <a href="#contacto" class="header-cta">Asesoría personalizada</a>
       </div>

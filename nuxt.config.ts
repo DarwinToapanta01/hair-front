@@ -9,7 +9,17 @@ export default defineNuxtConfig({
     enabled: true
   },
 
+  devServer: {
+    port: 3002
+  },
+
   css: ['~/assets/css/main.css'],
+
+  runtimeConfig: {
+    public: {
+      apiBase: 'http://localhost:3001'
+    }
+  },
 
   routeRules: {
     '/': { prerender: true }
