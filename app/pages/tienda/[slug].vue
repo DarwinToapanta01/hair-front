@@ -1,5 +1,5 @@
 <script setup lang="ts">
-type Variant = { sku: string, color: string, length: number, price: number, stock: number }
+type Variant = { id: string, sku: string, color: string, length: number, price: number, stock: number }
 type Product = { id: string, slug: string, name: string, kind: 'EXTENSION' | 'WIG', texture?: string, image: string, images: Array<{ url: string, alt: string }>, description: string, variants: Variant[] }
 
 const route = useRoute()
@@ -7,6 +7,7 @@ const config = useRuntimeConfig()
 const { data: product, error } = await useAsyncData<Product>(`product-${route.params.slug}`, () => $fetch(`${config.public.apiBase}/api/catalog/${route.params.slug}`))
 const selectedColor = ref('')
 const selectedLength = ref<number | null>(null)
+const cart = useCart()
 
 watch(product, (value) => {
   if (!value) return
@@ -26,6 +27,11 @@ const whatsappLink = computed(() => {
   const message = `Hola, quiero consultar ${product.value.name}, color ${selectedVariant.value.color}, ${selectedVariant.value.length} pulgadas. SKU: ${selectedVariant.value.sku}.`
   return `https://wa.me/593999499990?text=${encodeURIComponent(message)}`
 })
+const addToCart = () => {
+  if (!product.value || !selectedVariant.value || selectedVariant.value.stock < 1) return
+  cart.add({ variantId: selectedVariant.value.id, productName: product.value.name, image: product.value.image, color: selectedVariant.value.color, length: selectedVariant.value.length, sku: selectedVariant.value.sku, price: selectedVariant.value.price })
+  navigateTo('/carrito')
+}
 </script>
 
 <template>
@@ -42,7 +48,7 @@ const whatsappLink = computed(() => {
         <p class="description">{{ product.description }}</p>
         <div class="option-group"><p>Color <strong>{{ selectedColor }}</strong></p><div class="color-options"><button v-for="color in colors" :key="color" type="button" :class="{ active: selectedColor === color }" @click="selectColor(color)">{{ color }}</button></div></div>
         <div class="option-group"><p>Longitud <strong>{{ selectedLength }}″</strong></p><div class="length-options"><button v-for="length in lengths" :key="length" type="button" :class="{ active: selectedLength === length }" @click="selectedLength = length">{{ length }}″</button></div></div>
-        <div v-if="selectedVariant" class="purchase-box"><div><p class="price">${{ selectedVariant.price.toFixed(2) }}</p><p :class="selectedVariant.stock > 0 ? 'available' : 'sold-out'">{{ selectedVariant.stock > 0 ? `${selectedVariant.stock} disponibles` : 'Agotado temporalmente' }}</p></div><a v-if="selectedVariant.stock > 0" :href="whatsappLink" target="_blank" rel="noopener" class="whatsapp-link">Consultar por WhatsApp <span>→</span></a></div>
+        <div v-if="selectedVariant" class="purchase-box"><div><p class="price">${{ selectedVariant.price.toFixed(2) }}</p><p :class="selectedVariant.stock > 0 ? 'available' : 'sold-out'">{{ selectedVariant.stock > 0 ? `${selectedVariant.stock} disponibles` : 'Agotado temporalmente' }}</p></div><div v-if="selectedVariant.stock > 0" class="purchase-actions"><button type="button" class="cart-button" @click="addToCart">Agregar al carrito</button><a :href="whatsappLink" target="_blank" rel="noopener" class="whatsapp-link">WhatsApp <span>→</span></a></div></div>
         <div class="promises"><p><b>Envíos</b> a todo Ecuador</p><p><b>Calidad</b> suave, sedoso y durable</p><p><b>Asesoría</b> para elegir tu tono</p></div>
       </div>
     </section>
@@ -67,7 +73,7 @@ const whatsappLink = computed(() => {
 .option-group { margin-top: 1.2rem; }.option-group > p { display: flex; justify-content: space-between; margin: 0 0 .65rem; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; }.option-group strong { color: #806b37; font-weight: 600; }
 .color-options, .length-options { display: flex; flex-wrap: wrap; gap: .45rem; }.color-options button, .length-options button { border: 1px solid #cdbf9f; padding: .62rem .78rem; background: transparent; color: var(--ink); font-size: .72rem; cursor: pointer; }.color-options button.active, .length-options button.active { border-color: var(--ink); background: var(--ink); color: var(--gold-light); }
 .purchase-box { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.7rem; padding: .95rem 0; border-block: 1px solid #cdbf9f; }.price { margin: 0; font-family: var(--font-serif); font-size: 2rem; }.available, .sold-out { margin: .15rem 0 0; font-size: .67rem; }.available { color: #557041; }.sold-out { color: #9b3932; }
-.whatsapp-link { display: inline-flex; align-items: center; gap: .75rem; background: var(--ink); color: var(--gold); padding: .82rem .9rem; font-size: .64rem; letter-spacing: .1em; text-decoration: none; text-transform: uppercase; }
+.purchase-actions { display: flex; flex-wrap: wrap; gap: .5rem; }.cart-button, .whatsapp-link { display: inline-flex; align-items: center; gap: .75rem; border: 1px solid var(--ink); background: var(--ink); color: var(--gold); padding: .82rem .9rem; cursor: pointer; font-size: .64rem; letter-spacing: .1em; text-decoration: none; text-transform: uppercase; }.cart-button { background: transparent; color: var(--ink); }
 .promises { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; margin-top: 1.25rem; color: #666; font-size: .7rem; line-height: 1.45; }.promises p { margin: 0; }.promises b { display: block; color: var(--ink); }
 .product-error { padding-block: 7rem; }.product-error h1 { font-family: var(--font-serif); font-size: 4rem; font-weight: 500; }.product-error a { color: #806b37; }
 @media (max-width: 800px) { .detail-layout { grid-template-columns: 1fr; gap: 2rem; }.product-image { height: min(105vw, 520px); }.detail-info { max-width: 600px; }.breadcrumb { padding-top: 1.5rem; }.promises { grid-template-columns: 1fr; }.purchase-box { align-items: flex-start; flex-direction: column; }.whatsapp-link { width: 100%; justify-content: space-between; } }
